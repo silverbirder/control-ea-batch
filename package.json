@@ -1,0 +1,23 @@
+{
+  "name": "control-ea-batch",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "puppeteer": "^1.11.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Silver-birder/control-ea-batch.git"
+  },
+  "author": "silverbirder",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Silver-birder/control-ea-batch/issues"
+  },
+  "homepage": "https://github.com/Silver-birder/control-ea-batch#readme"
+}
