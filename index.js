@@ -1,53 +1,54 @@
-const puppeteer = require('puppeteer');
-const node_html_parser  = require('node-html-parser');
+const fs = require('fs');
+const parse = require('csv-parse/lib/sync');
+const {Datastore} = require('@google-cloud/datastore');
 
-const target_host = 'https://www.fxstreet.jp';
-const target_path = 'economic-calendar';
-const detail_selector = "#fxst-calendartable > tbody > tr.fxit-eventrow > td > div";
+// google cloud platform settings
+const projectId = 'ma-web-tools';
+const datastoreName = 'VipData';
 
-getVipData = async (req, res) => {
-    const browser = await puppeteer.launch({
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox'
-        ]
+// filepath
+const filepath = "./eventdates.csv";
+
+function saveVipData(dataList) {
+    const datastore = new Datastore({
+        projectId: projectId,
     });
-    const page = await browser.newPage();
-    // dummy access to avoid advertising
-    await page.goto(target_host + '/' + target_path, {waitUntil: 'networkidle2'});
+    const VipKey = datastore.key(datastoreName);
+    dataList.map(data => {
+        const vipData = {
+            key: VipKey,
+            data: data,
+        };
+        datastore.save(vipData);
+    })
+}
 
-    await page.reload();
-    // wait for the search box to appear
-    await page.waitFor(5000);
+function readCsv(filepath) {
+    const data = fs.readFileSync(filepath);
+    if (!data) {
+        throw new Error('cannot find file');
+    }
+    const result = parse(data, { columns: true, ltrim: true, rtrim: true, escape: '\\' });
+    return result;
+}
 
-    // extract html
-    const innerDataList = await page.evaluate((selector) => {
-        const list = Array.from(document.querySelectorAll(selector));
-        return list.map(data => {
-            return data.innerHTML;
-        });
-    }, detail_selector);
-
-    // format to desired data
-    const parsedDataList = innerDataList.map(value => {
-       const parsedHtml = node_html_parser.parse(value);
-       const dateHtml = parsedHtml.querySelector('.fxit-eventInfo-time').removeWhitespace().toString();
-       const currencyHtml = parsedHtml.querySelector('.fxit-event-name').removeWhitespace().toString();
-       const titleHtml = parsedHtml.querySelector('.fxit-event-title').removeWhitespace().toString();
-       const volatilityHtml = parsedHtml.querySelector('.fxit-eventInfo-vol-c').removeWhitespace().toString();
-       return {
-           date: node_html_parser.parse(dateHtml).text,
-           currency: node_html_parser.parse(currencyHtml).text,
-           title: node_html_parser.parse(titleHtml).text,
-           volatility: node_html_parser.parse(volatilityHtml).text
-       }
+function convert (dataList) {
+    const data_reg = /^(\d{2})\/(\d{2})\/(\d{4})\s(\d{2}):(\d{2}):\d{2}$/;
+    return dataList.map((data) => {
+        matched_data = data.DateTime.match(data_reg);
+        if (!matched_data) {
+            return
+        } else {
+            return {
+                'date': `${matched_data[3]}.${matched_data[1]}.${matched_data[2]} ${matched_data[4]}:${matched_data[5]}`,
+                'title': data.Name,
+                'currency': data.Currency,
+                'volatility': parseInt(data.Volatility)
+            }
+        }
     });
+}
 
-    // save
-    // ...
-    browser.close();
-
-    res.send(parsedDataList)
-};
-
-exports.getVipData = getVipData;
+const orgDataList = readCsv(filepath);
+const convertedDataList = convert(orgDataList);
+saveVipData(convertedDataList);
