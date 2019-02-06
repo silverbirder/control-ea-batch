@@ -40,10 +40,12 @@ function convert (dataList) {
             return
         } else {
             return {
-                'date': `${matched_data[3]}.${matched_data[1]}.${matched_data[2]} ${matched_data[4]}:${matched_data[5]}`,
+                'date': new Date(Date.UTC(matched_data[3], parseInt(matched_data[1])-1, parseInt(matched_data[2]), parseInt(matched_data[4]), parseInt(matched_data[5]))),
                 'title': data.Name,
                 'currency': data.Currency,
-                'volatility': parseInt(data.Volatility)
+                'volatility': parseInt(data.Volatility),
+                'isDelete': true,
+                'isClose': true,
             }
         }
     });
