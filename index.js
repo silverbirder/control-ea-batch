@@ -4,7 +4,7 @@ const {Datastore} = require('@google-cloud/datastore');
 
 // google cloud platform settings
 const projectId = 'ma-web-tools';
-const datastoreName = 'VipData';
+const datastoreName = 'FxVipData';
 
 // filepath
 const filepath = "./eventdates.csv";
